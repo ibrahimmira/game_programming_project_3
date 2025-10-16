@@ -20,9 +20,18 @@ constexpr Vector2 ORIGIN      = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 
 constexpr float FIXED_TIMESTEP = 1.0f / 60.0f;
 
+constexpr char ROCKET[]  = "assets/spritesheet_rocket.png";
+
+Vector2 gRocketPosition = ORIGIN,
+        gRocketScale    = { (float) 951 , (float) 358};
+
+
+Texture2D gRocketTexture;
+
 // Global Variables
 AppStatus gAppStatus   = RUNNING;
 float gPreviousTicks   = 0.0f,
+      gAngle          = 0.0f,
       gTimeAccumulator = 0.0f;
 
 // Function Declarations
@@ -32,10 +41,47 @@ void update();
 void render();
 void shutdown();
 
+void renderObject(const Texture2D *texture, const Vector2 *position, 
+                  const Vector2 *scale)
+{
+    // Whole texture (UV coordinates)
+    Rectangle textureArea = {
+        // top-left corner
+        0.0f, 0.0f,
+
+        // bottom-right corner (of texture)
+        static_cast<float>(texture->width),
+        static_cast<float>(texture->height)
+    };
+
+    // Destination rectangle – centred on gPosition
+    Rectangle destinationArea = {
+        position->x,
+        position->y,
+        static_cast<float>(scale->x),
+        static_cast<float>(scale->y)
+    };
+
+    // Origin inside the source texture (centre of the texture)
+    Vector2 originOffset = {
+        static_cast<float>(scale->x) / 2.0f,
+        static_cast<float>(scale->y) / 2.0f
+    };
+
+    // Render the texture on screen
+    DrawTexturePro(
+        *texture, 
+        textureArea, destinationArea, originOffset,
+        gAngle, WHITE
+    );
+}
+
 void initialise()
 {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Lunar Lander");
     SetTargetFPS(FPS);
+
+    gRocketTexture = LoadTexture(ROCKET);
 }
 
 void processInput() 
@@ -71,6 +117,7 @@ void render()
 {
     BeginDrawing();
     ClearBackground(ColorFromHex(BG_COLOUR));
+    renderObject(&gRocketTexture, &gRocketPosition, &gRocketScale);
     EndDrawing();
 }
 
