@@ -5,6 +5,7 @@
 
 enum Direction    { LEFT, UP, RIGHT, DOWN }; // For walking
 enum EntityStatus { ACTIVE, INACTIVE      };
+enum RocketState  { IDLE, THRUSTING     };
 
 class Entity
 {
@@ -17,13 +18,16 @@ private:
     Vector2 mScale;
     Vector2 mColliderDimensions;
     
-    Texture2D mTexture;
+    std::map<RocketState, Texture2D> mTextures;
+    Texture2D mCurrentTexture;
     TextureType mTextureType;
     Vector2 mSpriteSheetDimensions;
     
-    std::map<Direction, std::vector<int>> mAnimationAtlas;
+    // std::map<Direction, std::vector<int>> mAnimationAtlas;
+    std::map<RocketState, std::vector<int>> mAnimationAtlas;
     std::vector<int> mAnimationIndices;
     Direction mDirection;
+    RocketState mRocketStatus;
     int mFrameSpeed;
 
     int mCurrentFrameIndex = 0;
@@ -58,7 +62,7 @@ private:
 public:
     static constexpr int   DEFAULT_SIZE          = 250;
     static constexpr int   DEFAULT_SPEED         = 200;
-    static constexpr int   DEFAULT_FRAME_SPEED   = 14;
+    static constexpr int   DEFAULT_FRAME_SPEED   = 12;
     static constexpr float Y_COLLISION_THRESHOLD = 0.5f;
 
     Entity();
@@ -66,6 +70,11 @@ public:
     Entity(Vector2 position, Vector2 scale, const char *textureFilepath, 
         TextureType textureType, Vector2 spriteSheetDimensions, 
         std::map<Direction, std::vector<int>> animationAtlas);
+
+    Entity(Vector2 position, Vector2 scale, std::vector<const char*> textureFilepaths, 
+        TextureType textureType, Vector2 spriteSheetDimensions, 
+        std::map<RocketState, std::vector<int>> animationAtlas);
+
     ~Entity();
 
     void update(float deltaTime, Entity *collidableEntities, int collisionCheckCount);
@@ -93,7 +102,7 @@ public:
     Vector2     getScale()                 const { return mScale;                 }
     Vector2     getColliderDimensions()    const { return mScale;                 }
     Vector2     getSpriteSheetDimensions() const { return mSpriteSheetDimensions; }
-    Texture2D   getTexture()               const { return mTexture;               }
+    std::map<RocketState, Texture2D> getTextures()        const { return mTextures;         }
     TextureType getTextureType()           const { return mTextureType;           }
     Direction   getDirection()             const { return mDirection;             }
     int         getFrameSpeed()            const { return mFrameSpeed;            }
@@ -105,7 +114,8 @@ public:
     bool isCollidingTop()    const { return mIsCollidingTop;    }
     bool isCollidingBottom() const { return mIsCollidingBottom; }
 
-    std::map<Direction, std::vector<int>> getAnimationAtlas() const { return mAnimationAtlas; }
+    // std::map<Direction, std::vector<int>> getAnimationAtlas() const { return mAnimationAtlas; }
+    std::map<RocketState, std::vector<int>> getAnimationAtlas() const { return mAnimationAtlas; }
 
     void setPosition(Vector2 newPosition)
         { mPosition = newPosition;                 }
@@ -115,8 +125,8 @@ public:
         { mAcceleration = newAcceleration;         }
     void setScale(Vector2 newScale)
         { mScale = newScale;                       }
-    void setTexture(const char *textureFilepath)
-        { mTexture = LoadTexture(textureFilepath); }
+    // void setTexture(const char *textureFilepath)
+    //     { mTexture = LoadTexture(textureFilepath); }
     void setColliderDimensions(Vector2 newDimensions) 
         { mColliderDimensions = newDimensions;     }
     void setSpriteSheetDimensions(Vector2 newDimensions) 
@@ -129,6 +139,10 @@ public:
         { mJumpingPower = newJumpingPower;         }
     void setAngle(float newAngle) 
         { mAngle = newAngle;                       }
+
+    // check later
+    void setRocketState(RocketState newState);
+
 };
 
 #endif // ENTITY_CPP

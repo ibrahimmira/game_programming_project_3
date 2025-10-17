@@ -4,30 +4,33 @@ Entity::Entity() : mPosition {0.0f, 0.0f}, mMovement {0.0f, 0.0f},
                    mVelocity {0.0f, 0.0f}, mAcceleration {0.0f, 0.0f},
                    mScale {DEFAULT_SIZE, DEFAULT_SIZE},
                    mColliderDimensions {DEFAULT_SIZE, DEFAULT_SIZE}, 
-                   mTexture {NULL}, mTextureType {SINGLE}, mAngle {0.0f},
+                   mTextures {{}}, mTextureType {SINGLE}, mAngle {0.0f},
                    mSpriteSheetDimensions {}, mDirection {RIGHT}, 
                    mAnimationAtlas {{}}, mAnimationIndices {}, mFrameSpeed {0} { }
 
-Entity::Entity(Vector2 position, Vector2 scale, const char *textureFilepath) : 
-    mPosition {position}, mVelocity {0.0f, 0.0f}, mAcceleration {0.0f, 0.0f}, 
-    mScale {scale}, mMovement {0.0f, 0.0f}, mColliderDimensions {scale},
-    mTexture {LoadTexture(textureFilepath)}, mTextureType {SINGLE}, 
-    mDirection {RIGHT}, mAnimationAtlas {{}}, mAnimationIndices {}, 
-    mFrameSpeed {0}, mSpeed {DEFAULT_SPEED}, mAngle {0.0f} { }
 
-Entity::Entity(Vector2 position, Vector2 scale, const char *textureFilepath, 
-        TextureType textureType, Vector2 spriteSheetDimensions, std::map<Direction, 
-        std::vector<int>> animationAtlas) : mPosition {position}, 
-        mVelocity {0.0f, 0.0f}, mAcceleration {0.0f, 0.0f}, 
-        mMovement { 0.0f, 0.0f }, mScale {scale}, mColliderDimensions {scale},
-        mTexture {LoadTexture(textureFilepath)}, mTextureType {ATLAS}, 
-        mSpriteSheetDimensions {spriteSheetDimensions}, 
-        mAnimationAtlas {animationAtlas}, mDirection {RIGHT}, 
-        mAnimationIndices {animationAtlas.at(RIGHT)}, 
-        mFrameSpeed {DEFAULT_FRAME_SPEED}, mAngle { 0.0f }, 
-        mSpeed { DEFAULT_SPEED } { }
+Entity::Entity(Vector2 position, Vector2 scale, 
+    std::vector<const char*> textureFilepaths, TextureType textureType,
+    Vector2 spriteSheetDimensions, std::map<RocketState, std::vector<int>> animationAtlas) : mPosition {position}, 
+    mMovement { 0.0f, 0.0f }, mScale {scale}, mColliderDimensions {scale}, 
+    mTextureType {ATLAS}, 
+    mSpriteSheetDimensions {spriteSheetDimensions}, 
+    mAnimationAtlas {animationAtlas}, mDirection {DOWN}, 
+    mAnimationIndices {animationAtlas.at(IDLE)}, 
+    mFrameSpeed {DEFAULT_FRAME_SPEED}, mAngle { 0.0f }, 
+    mSpeed { DEFAULT_SPEED }, mRocketStatus { IDLE } 
+{
+    for (int i = 0; i < textureFilepaths.size(); i++)
+        mTextures[(RocketState) i] = LoadTexture(textureFilepaths[i]);
 
-Entity::~Entity() { UnloadTexture(mTexture); };
+    mCurrentTexture = mTextures[mRocketStatus];
+}
+
+Entity::~Entity() 
+{
+    for (int i = 0; i < mTextures.size(); i++)
+        UnloadTexture(mTextures[(RocketState) i]); 
+};
 
 /**
  * Iterates through a list of collidable entities, checks for collisions with
@@ -145,7 +148,7 @@ bool Entity::isColliding(Entity *other) const
  */
 void Entity::animate(float deltaTime)
 {
-    mAnimationIndices = mAnimationAtlas.at(mDirection);
+    // mAnimationIndices = mAnimationAtlas.at(mDirection);
 
     mAnimationTime += deltaTime;
     float framesPerSecond = 1.0f / mFrameSpeed;
@@ -192,6 +195,7 @@ void Entity::update(float deltaTime, Entity *collidableEntities, int collisionCh
 
     if (mTextureType == ATLAS && GetLength(mMovement) != 0 && mIsCollidingBottom) 
         animate(deltaTime);
+    animate(deltaTime);
 }
 
 void Entity::render()
@@ -209,13 +213,13 @@ void Entity::render()
                 0.0f, 0.0f,
 
                 // bottom-right corner (of texture)
-                static_cast<float>(mTexture.width),
-                static_cast<float>(mTexture.height)
+                static_cast<float>(mCurrentTexture.width),
+                static_cast<float>(mCurrentTexture.height)
             };
             break;
         case ATLAS:
             textureArea = getUVRectangle(
-                &mTexture, 
+                &mCurrentTexture, 
                 mAnimationIndices[mCurrentFrameIndex], 
                 mSpriteSheetDimensions.x, 
                 mSpriteSheetDimensions.y
@@ -240,10 +244,22 @@ void Entity::render()
 
     // Render the texture on screen
     DrawTexturePro(
-        mTexture, 
+        mCurrentTexture, 
         textureArea, destinationArea, originOffset,
         mAngle, WHITE
     );
 
     displayCollider();
+}
+
+// check later
+void Entity::setRocketState(RocketState newState)
+{
+    if (mRocketStatus == newState) return;
+
+        mRocketStatus = newState;
+        mCurrentTexture = mTextures[mRocketStatus];
+        mAnimationIndices = mAnimationAtlas.at(mRocketStatus);
+        mCurrentFrameIndex = 0;
+        mAnimationTime = 0.0f;
 }
