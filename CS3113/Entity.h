@@ -6,6 +6,11 @@
 enum Direction    { LEFT, UP, RIGHT, DOWN }; // For walking
 enum EntityStatus { ACTIVE, INACTIVE      };
 enum RocketState  { IDLE, THRUSTING     };
+constexpr float GRAVITATIONAL_ACCELERATION = 10.0f,
+                THRUSTING_ACCELERATION   = 18.0f,
+                HORIZONTAL_ACCELERATION = 12.0f,
+                DRAG = 0.5f;
+
 
 class Entity
 {
@@ -44,6 +49,11 @@ private:
     bool mIsCollidingRight  = false;
     bool mIsCollidingLeft   = false;
 
+    bool mAcceleratingUp    = false;
+    bool mAcceleratingDown  = false;
+    bool mAcceleratingLeft  = false;
+    bool mAcceleratingRight = false;
+
     EntityStatus mEntityStatus = ACTIVE;
 
     bool isColliding(Entity *other) const;
@@ -64,6 +74,9 @@ public:
     static constexpr int   DEFAULT_SPEED         = 200;
     static constexpr int   DEFAULT_FRAME_SPEED   = 12;
     static constexpr float Y_COLLISION_THRESHOLD = 0.5f;
+
+    // check later
+    static constexpr float ROTATION_SPEED = 120.0f;
 
     Entity();
     Entity(Vector2 position, Vector2 scale, const char *textureFilepath);
@@ -86,12 +99,54 @@ public:
     void deactivate() { mEntityStatus  = INACTIVE; }
     void displayCollider();
 
+    // check later
+    void displayText();
+
     bool isActive() { return mEntityStatus == ACTIVE ? true : false; }
 
-    void moveUp()    { mMovement.y = -1; mDirection = UP;    }
-    void moveDown()  { mMovement.y =  1; mDirection = DOWN;  }
-    void moveLeft()  { mMovement.x = -1; mDirection = LEFT;  }
-    void moveRight() { mMovement.x =  1; mDirection = RIGHT; }
+    // void moveUp()    { mMovement.y = -1; mDirection = UP;    }
+    // void moveDown()  { mMovement.y =  1; mDirection = DOWN;  }
+    // void moveLeft()  { mMovement.x = -1; mDirection = LEFT;  }
+    // void moveRight() { mMovement.x =  1; mDirection = RIGHT; }
+
+    
+
+    void accelerateUp()    {
+        // setAcceleration({ 0.0f, GRAVITATIONAL_ACCELERATION });
+        // mAcceleration.y -= THRUSTING_ACCELERATION;
+        // // setRocketState(THRUSTING);
+        mAcceleratingUp = true;
+        // mAcceleration.y = -10.0f;
+        // setRocketState(THRUSTING);
+     }
+    void accelerateLeft()  {
+        // setAcceleration({ 0.0f, GRAVITATIONAL_ACCELERATION });
+        // mAcceleration.x -= HORIZONTAL_ACCELERATION;
+        // mAcceleration.x = -5.0f;
+        // setRocketState(THRUSTING); 
+        mAcceleratingLeft = true;
+    }
+    void accelerateRight() {
+        // setAcceleration({ 0.0f, GRAVITATIONAL_ACCELERATION });
+        // mAcceleration.x += HORIZONTAL_ACCELERATION;
+        // // setRocketState(THRUSTING); 
+        mAcceleratingRight = true;
+        // mAcceleration.x = 5.0f;
+        // setRocketState(THRUSTING);
+
+    }
+    void accelerateDown()  {
+        // if (mVelocity.x < 0.0f) DRAG *= -1.0f;
+        // else DRAG = fabs(DRAG);
+        // setAcceleration({0.0f, GRAVITATIONAL_ACCELERATION });
+        // setRocketState(IDLE); 
+        // mAcceleratingDown = true;
+        // mAcceleration.y = 10.0f;
+        // setRocketState(IDLE);
+    }
+
+    // check later
+    // void rotate(float deltaAngle, float direction);
 
     void resetMovement() { mMovement = { 0.0f, 0.0f }; }
 

@@ -149,6 +149,7 @@ bool Entity::isColliding(Entity *other) const
 void Entity::animate(float deltaTime)
 {
     // mAnimationIndices = mAnimationAtlas.at(mDirection);
+    mAnimationIndices = mAnimationAtlas.at(mRocketStatus);
 
     mAnimationTime += deltaTime;
     float framesPerSecond = 1.0f / mFrameSpeed;
@@ -186,16 +187,86 @@ void Entity::update(float deltaTime, Entity *collidableEntities, int collisionCh
     if(mEntityStatus == INACTIVE) return;
 
     resetColliderFlags();
+    displayText();
+    // setAcceleration({ 0.0f, GRAVITATIONAL_ACCELERATION });
 
-    mVelocity.x = mMovement.x * mSpeed;
+    Vector2 accel = { 0.0f, GRAVITATIONAL_ACCELERATION };
+
+    if (mAcceleratingUp)    accel.y -= THRUSTING_ACCELERATION;
+    if (mAcceleratingLeft)  accel.x -= HORIZONTAL_ACCELERATION;
+    if (mAcceleratingRight) accel.x += HORIZONTAL_ACCELERATION;
+
+    if (!mAcceleratingLeft && !mAcceleratingRight) 
+    {
+        float drag = -mVelocity.x * DRAG;      // e.g. 2–4
+        float stop = -mVelocity.x / deltaTime;                         // exact brake
+        if (fabsf(drag) > fabsf(stop)) drag = stop;             // avoid overshoot
+        // float maxBrake = -mVelocity.x / deltaTime; // exact amount to hit zero
+        // if (fabsf(drag) > fabsf(maxBrake)) drag = maxBrake;
+        accel.x += drag;
+    }
+
+    setAcceleration(accel);
+    setRocketState((mAcceleratingUp || mAcceleratingLeft || mAcceleratingRight) ? THRUSTING : IDLE);
+
+    // consume inputs so you must press again next frame if desired
+    mAcceleratingRight = mAcceleratingLeft = mAcceleratingUp = false;
+    
+    // mVelocity.x = mMovement.x * mSpeed;
 
     mVelocity.x += mAcceleration.x * deltaTime;
     mVelocity.y += mAcceleration.y * deltaTime;
 
 
-    if (mTextureType == ATLAS && GetLength(mMovement) != 0 && mIsCollidingBottom) 
+    // // check later
+    mPosition.x += mVelocity.x * deltaTime;
+    mPosition.y += mVelocity.y * deltaTime;
+
+    // mVelocity *= 0.98f;
+
+
+    // if (mAcceleration.y != 001.0f) {
+    //     setRocketState(THRUSTING);
+    // }
+    // else {
+    //     setRocketState(IDLE);
+    // }
+
+    // if (GetLength(mAcceleration) == GRAVITATIONAL_ACCELERATION) {
+    //     setRocketState(IDLE);
+    // }
+    // else {
+    //     setRocketState(THRUSTING);
+    // }
+
+    // if (mAcceleratingUp) {
+    //     mAcceleration.y -= THRUSTING_ACCELERATION;
+    //     // setRocketState(THRUSTING);
+    // }
+    // if (mAcceleratingDown) {
+    //     // if (mVelocity.x < 0.0f) DRAG *= -1.0f;
+    //     // else DRAG = fabs(DRAG);
+    //     // mAcceleration.x += DRAG;
+    //     setAcceleration({DRAG, GRAVITATIONAL_ACCELERATION });
+    //     // setRocketState(IDLE);
+    // }
+    // if (mAcceleratingLeft) {
+    //     mAcceleration.x -= HORIZONTAL_ACCELERATION;
+    //     // setRocketState(THRUSTING);
+    // }
+    // if (mAcceleratingRight) {
+    //     mAcceleration.x += HORIZONTAL_ACCELERATION;
+    //     // setRocketState(THRUSTING);
+    // }
+
+    // setAcceleration({ 0.0f, GRAVITATIONAL_ACCELERATION });
+    // if (mAcceleratingUp)    mAcceleration.y -= THRUSTING_ACCELERATION;
+    // if (mAcceleratingLeft)  mAcceleration.x -= HORIZONTAL_ACCELERATION;
+    // if (mAcceleratingRight) mAcceleration.x += HORIZONTAL_ACCELERATION;
+
+    if (mTextureType == ATLAS) 
+    
         animate(deltaTime);
-    animate(deltaTime);
 }
 
 void Entity::render()
@@ -262,4 +333,31 @@ void Entity::setRocketState(RocketState newState)
         mAnimationIndices = mAnimationAtlas.at(mRocketStatus);
         mCurrentFrameIndex = 0;
         mAnimationTime = 0.0f;
+}
+
+// check later
+// void Entity::rotate(float FIXED_TIMESTEP, float direction) {
+
+//     float deltaAngle = ROTATION_SPEED * FIXED_TIMESTEP * direction;
+
+//     {
+//         mAngle += deltaAngle;
+//         if (mAngle > 90.0f) mAngle = 90.0f;
+//         if (mAngle < -90.0f) mAngle = -90.0;
+//     }
+// }
+
+
+void Entity::displayText() 
+{
+    float ticks = (float) GetTime();
+    int countdown = 60 - (int)ticks;
+
+    DrawText(TextFormat("Score: %08i", countdown), 20, 20, 20, WHITE);
+    DrawText(TextFormat("Time: %08i", countdown), 20, 50, 20, WHITE);
+    DrawText(TextFormat("Fuel: %08i", countdown), 20, 80, 20, WHITE);
+
+    DrawText(TextFormat("Altitude: %08.2f", 1500 - getPosition().y), 1500 - 300, 20, 20, WHITE);
+    DrawText(TextFormat("Horizontal Speed: %08.2f", getVelocity().x), 1500 - 300, 50, 20, WHITE);
+    DrawText(TextFormat("Vertical Speed: %08.2f", getVelocity().y), 1500 - 300, 80, 20, WHITE);
 }

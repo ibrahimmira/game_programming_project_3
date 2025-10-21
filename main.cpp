@@ -1,7 +1,7 @@
 /**
 * Author: Ibrahim Mira
-* Assignment: Pong Clone
-* Date due: 2025-10-13, 11:59pm
+* Assignment: Lunar Lander
+* Date due: 2025-10-25, 11:59pm
 * I pledge that I have completed this assignment without
 * collaborating with anyone else, in conformance with the
 * NYU School of Engineering Policies and Procedures on
@@ -24,7 +24,7 @@ constexpr char ROCKET_IDLE[]  = "assets/idling_rocket.png";
 constexpr char ROCKET_THRUSTING[]  = "assets/thrusting_rocket.png";
 
 Vector2 gRocketPosition = ORIGIN,
-        gRocketScale    = { (float) 128 , (float) 128 };
+        gRocketScale    = { (float) 100 , (float) 100 };
 
 
 Entity *gRocket = nullptr;
@@ -64,6 +64,7 @@ void initialise()
     );
 
     gRocket->setColliderDimensions({ gRocketScale.x/2, gRocketScale.y/2});
+    gRocket->setAcceleration({ 0.0f, GRAVITATIONAL_ACCELERATION });
 }
 
 void processInput() 
@@ -71,12 +72,26 @@ void processInput()
 
     if (IsKeyPressed(KEY_Q) || WindowShouldClose()) gAppStatus = TERMINATED;
 
-    // check later
-    if (IsKeyDown(KEY_SPACE)) {
-            gRocket->setRocketState(THRUSTING);
-        } else {
-            gRocket->setRocketState(IDLE);
-}
+    // gRocket->resetMovement(); 
+    // gRocket->setAcceleration({ 0.0f, GRAVITATIONAL_ACCELERATION });
+
+    // if      (IsKeyDown(KEY_A))  gRocket->accelerateLeft();
+    // else if (IsKeyDown(KEY_D))  gRocket->accelerateRight();
+    // else if (IsKeyDown(KEY_W))  gRocket->accelerateUp();
+    // else if  (IsKeyDown(KEY_SPACE)) gRocket->accelerateDown();  
+
+    if      (IsKeyDown(KEY_A))  gRocket->accelerateLeft();
+    if (IsKeyDown(KEY_D))  gRocket->accelerateRight();
+    if (IsKeyDown(KEY_W))  gRocket->accelerateUp();
+    gRocket->accelerateDown();
+    // else if  (IsKeyDown(KEY_SPACE)) gRocket->accelerateDown(); 
+
+    // if (IsKeyDown(KEY_SPACE)) {
+    //     gRocket->setAcceleration({0.0f, -1 * GRAVITATIONAL_ACCELERATION});
+    // }
+    // else {
+    //     gRocket->setAcceleration({0.0f, GRAVITATIONAL_ACCELERATION});
+    // }
 
 }
 
@@ -86,6 +101,7 @@ void update()
     float ticks = (float) GetTime();
     float deltaTime = ticks - gPreviousTicks;
     gPreviousTicks  = ticks;
+
 
     // Fixed timestep
     deltaTime += gTimeAccumulator;
