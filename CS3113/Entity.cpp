@@ -26,6 +26,27 @@ Entity::Entity(Vector2 position, Vector2 scale,
     mCurrentTexture = mTextures[mRocketStatus];
 }
 
+// check later
+Entity::Entity(Vector2 position, Vector2 scale, const char *textureFilepath)
+    : mPosition{position},
+      mMovement{0.0f, 0.0f},
+      mVelocity{0.0f, 0.0f},
+      mAcceleration{0.0f, 0.0f},
+      mScale{scale},
+      mColliderDimensions{scale},
+      mTextureType{SINGLE},
+      mSpriteSheetDimensions{},
+      mAnimationAtlas{},
+      mAnimationIndices{},
+      mFrameSpeed{0},
+      mAngle{0.0f},
+      mSpeed{DEFAULT_SPEED},
+      mRocketStatus{IDLE}
+{
+    mTextures[IDLE]   = LoadTexture(textureFilepath);
+    mCurrentTexture   = mTextures[IDLE];
+}
+
 Entity::~Entity() 
 {
     for (int i = 0; i < mTextures.size(); i++)
@@ -187,83 +208,52 @@ void Entity::update(float deltaTime, Entity *collidableEntities, int collisionCh
     if(mEntityStatus == INACTIVE) return;
 
     resetColliderFlags();
-    displayText();
-    // setAcceleration({ 0.0f, GRAVITATIONAL_ACCELERATION });
+    displayStats();
 
-    Vector2 accel = { 0.0f, GRAVITATIONAL_ACCELERATION };
+    if (mIsGameOver) {
+        gameOver();
+        // return;
+    }
 
-    if (mAcceleratingUp)    accel.y -= THRUSTING_ACCELERATION;
-    if (mAcceleratingLeft)  accel.x -= HORIZONTAL_ACCELERATION;
-    if (mAcceleratingRight) accel.x += HORIZONTAL_ACCELERATION;
+    resetAcceleration();
+
+    if (mAcceleratingUp)    mAcceleration.y -= THRUSTING_ACCELERATION;
+    if (mAcceleratingLeft)  mAcceleration.x -= HORIZONTAL_ACCELERATION;
+    if (mAcceleratingRight) mAcceleration.x += HORIZONTAL_ACCELERATION;
+
 
     if (!mAcceleratingLeft && !mAcceleratingRight) 
     {
-        float drag = -mVelocity.x * DRAG;      // e.g. 2–4
-        float stop = -mVelocity.x / deltaTime;                         // exact brake
-        if (fabsf(drag) > fabsf(stop)) drag = stop;             // avoid overshoot
-        // float maxBrake = -mVelocity.x / deltaTime; // exact amount to hit zero
-        // if (fabsf(drag) > fabsf(maxBrake)) drag = maxBrake;
-        accel.x += drag;
+        applyDrag(deltaTime);
     }
 
-    setAcceleration(accel);
     setRocketState((mAcceleratingUp || mAcceleratingLeft || mAcceleratingRight) ? THRUSTING : IDLE);
 
-    // consume inputs so you must press again next frame if desired
     mAcceleratingRight = mAcceleratingLeft = mAcceleratingUp = false;
-    
-    // mVelocity.x = mMovement.x * mSpeed;
 
     mVelocity.x += mAcceleration.x * deltaTime;
     mVelocity.y += mAcceleration.y * deltaTime;
 
-
-    // // check later
     mPosition.x += mVelocity.x * deltaTime;
     mPosition.y += mVelocity.y * deltaTime;
+    
+    checkCollisionY(collidableEntities, collisionCheckCount);
+    checkCollisionX(collidableEntities, collisionCheckCount);
 
-    // mVelocity *= 0.98f;
+    if (getPosition().y > 850.0f || getPosition().y < -50.0f || 
+        getPosition().x < -50.0f || getPosition().x > 1550.0f) 
+    {
+        mGameOverReason = OUT_OF_BOUNDS;
+        mIsGameOver = true;
+    }
 
+    if (mFuelTank <= 0.0f){
 
-    // if (mAcceleration.y != 001.0f) {
-    //     setRocketState(THRUSTING);
-    // }
-    // else {
-    //     setRocketState(IDLE);
-    // }
-
-    // if (GetLength(mAcceleration) == GRAVITATIONAL_ACCELERATION) {
-    //     setRocketState(IDLE);
-    // }
-    // else {
-    //     setRocketState(THRUSTING);
-    // }
-
-    // if (mAcceleratingUp) {
-    //     mAcceleration.y -= THRUSTING_ACCELERATION;
-    //     // setRocketState(THRUSTING);
-    // }
-    // if (mAcceleratingDown) {
-    //     // if (mVelocity.x < 0.0f) DRAG *= -1.0f;
-    //     // else DRAG = fabs(DRAG);
-    //     // mAcceleration.x += DRAG;
-    //     setAcceleration({DRAG, GRAVITATIONAL_ACCELERATION });
-    //     // setRocketState(IDLE);
-    // }
-    // if (mAcceleratingLeft) {
-    //     mAcceleration.x -= HORIZONTAL_ACCELERATION;
-    //     // setRocketState(THRUSTING);
-    // }
-    // if (mAcceleratingRight) {
-    //     mAcceleration.x += HORIZONTAL_ACCELERATION;
-    //     // setRocketState(THRUSTING);
-    // }
-
-    // setAcceleration({ 0.0f, GRAVITATIONAL_ACCELERATION });
-    // if (mAcceleratingUp)    mAcceleration.y -= THRUSTING_ACCELERATION;
-    // if (mAcceleratingLeft)  mAcceleration.x -= HORIZONTAL_ACCELERATION;
-    // if (mAcceleratingRight) mAcceleration.x += HORIZONTAL_ACCELERATION;
-
+        mFuelTank = 0.0f;
+        mGameOverReason = OUT_OF_FUEL;
+        mIsGameOver = true;
+    } 
+    
     if (mTextureType == ATLAS) 
     
         animate(deltaTime);
@@ -320,7 +310,7 @@ void Entity::render()
         mAngle, WHITE
     );
 
-    displayCollider();
+    // displayCollider();
 }
 
 // check later
@@ -335,29 +325,30 @@ void Entity::setRocketState(RocketState newState)
         mAnimationTime = 0.0f;
 }
 
-// check later
-// void Entity::rotate(float FIXED_TIMESTEP, float direction) {
-
-//     float deltaAngle = ROTATION_SPEED * FIXED_TIMESTEP * direction;
-
-//     {
-//         mAngle += deltaAngle;
-//         if (mAngle > 90.0f) mAngle = 90.0f;
-//         if (mAngle < -90.0f) mAngle = -90.0;
-//     }
-// }
-
-
-void Entity::displayText() 
+void Entity::displayStats() 
 {
     float ticks = (float) GetTime();
     int countdown = 60 - (int)ticks;
 
-    DrawText(TextFormat("Score: %08i", countdown), 20, 20, 20, WHITE);
-    DrawText(TextFormat("Time: %08i", countdown), 20, 50, 20, WHITE);
-    DrawText(TextFormat("Fuel: %08i", countdown), 20, 80, 20, WHITE);
-
-    DrawText(TextFormat("Altitude: %08.2f", 1500 - getPosition().y), 1500 - 300, 20, 20, WHITE);
+    // DrawText(TextFormat("Score: %08i", countdown), 20, 20, 20, WHITE);
+    // DrawText(TextFormat("Time: %08i", countdown), 20, 50, 20, WHITE);
+    // DrawText(TextFormat("Fuel: %08i", countdown), 20, 80, 20, WHITE);
+    //DrawText(TextFormat("Fuel: %04.2f", mFuelTank), 20, 20, 20, WHITE);
+    DrawText(TextFormat("Fuel: %04.2f%%", mFuelTank), 20, 20, 20, WHITE);
+    DrawText(TextFormat("Altitude: %08.2f", 800 - getPosition().y), 1500 - 300, 20, 20, WHITE);
     DrawText(TextFormat("Horizontal Speed: %08.2f", getVelocity().x), 1500 - 300, 50, 20, WHITE);
     DrawText(TextFormat("Vertical Speed: %08.2f", getVelocity().y), 1500 - 300, 80, 20, WHITE);
+}
+
+void Entity::gameOver() 
+{
+    if (mGameOverReason == OUT_OF_BOUNDS) {
+        DrawText("GAME OVER: OUT OF BOUNDS", 1500 / 2 - 350, 800 / 2, 50, RED);
+        return;
+    }
+
+    if (mGameOverReason == OUT_OF_FUEL) {
+        DrawText("GAME OVER: OUT OF FUEL", 1500 / 2 - 350, 800 / 2, 50, RED);
+        return;
+    }
 }

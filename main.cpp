@@ -22,12 +22,17 @@ constexpr float FIXED_TIMESTEP = 1.0f / 60.0f;
 
 constexpr char ROCKET_IDLE[]  = "assets/idling_rocket.png";
 constexpr char ROCKET_THRUSTING[]  = "assets/thrusting_rocket.png";
+constexpr char LANDING_PAD[] = "assets/white_landing_platform.png";
 
 Vector2 gRocketPosition = ORIGIN,
-        gRocketScale    = { (float) 100 , (float) 100 };
+        gRocketScale    = { (float) 100 , (float) 100 },
+
+        gLandingPadPosition = { ORIGIN.x, ORIGIN.y + 300},
+        gLandingPadScale    = { (float) 800 / 5  , (float) 30 / 5 };
 
 
 Entity *gRocket = nullptr;
+Entity *gLandingPad = nullptr;
 
 // Global Variables
 AppStatus gAppStatus   = RUNNING;
@@ -63,8 +68,17 @@ void initialise()
         animationAtlas
     );
 
+    gLandingPad = new Entity(
+        gLandingPadPosition,
+        gLandingPadScale,
+        LANDING_PAD
+    );
+
+
+
     gRocket->setColliderDimensions({ gRocketScale.x/2, gRocketScale.y/2});
     gRocket->setAcceleration({ 0.0f, GRAVITATIONAL_ACCELERATION });
+    gLandingPad->setColliderDimensions({ gLandingPadScale.x, gLandingPadScale.y});
 }
 
 void processInput() 
@@ -72,26 +86,9 @@ void processInput()
 
     if (IsKeyPressed(KEY_Q) || WindowShouldClose()) gAppStatus = TERMINATED;
 
-    // gRocket->resetMovement(); 
-    // gRocket->setAcceleration({ 0.0f, GRAVITATIONAL_ACCELERATION });
-
-    // if      (IsKeyDown(KEY_A))  gRocket->accelerateLeft();
-    // else if (IsKeyDown(KEY_D))  gRocket->accelerateRight();
-    // else if (IsKeyDown(KEY_W))  gRocket->accelerateUp();
-    // else if  (IsKeyDown(KEY_SPACE)) gRocket->accelerateDown();  
-
     if      (IsKeyDown(KEY_A))  gRocket->accelerateLeft();
-    if (IsKeyDown(KEY_D))  gRocket->accelerateRight();
-    if (IsKeyDown(KEY_W))  gRocket->accelerateUp();
-    gRocket->accelerateDown();
-    // else if  (IsKeyDown(KEY_SPACE)) gRocket->accelerateDown(); 
-
-    // if (IsKeyDown(KEY_SPACE)) {
-    //     gRocket->setAcceleration({0.0f, -1 * GRAVITATIONAL_ACCELERATION});
-    // }
-    // else {
-    //     gRocket->setAcceleration({0.0f, GRAVITATIONAL_ACCELERATION});
-    // }
+    if      (IsKeyDown(KEY_D))  gRocket->accelerateRight();
+    if      (IsKeyDown(KEY_W))  gRocket->accelerateUp();
 
 }
 
@@ -119,7 +116,7 @@ void update()
     }
 
     if (gRocket != nullptr) {
-        gRocket->update(FIXED_TIMESTEP, nullptr, 0);
+        gRocket->update(FIXED_TIMESTEP, gLandingPad, 1);
 }
 }
 
@@ -127,6 +124,7 @@ void render()
 {
     BeginDrawing();
     ClearBackground(ColorFromHex(BG_COLOUR));
+    gLandingPad->render();
     gRocket->render();
     EndDrawing();
 }
