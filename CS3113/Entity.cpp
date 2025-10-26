@@ -339,7 +339,7 @@ void Entity::render()
         mAngle, WHITE
     );
 
-    displayCollider();
+    // displayCollider();
 }
 
 void Entity::setRocketState(RocketState newState)
