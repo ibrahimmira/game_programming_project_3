@@ -1,12 +1,12 @@
 #include "Entity.h"
 
-Entity::Entity() : mPosition {0.0f, 0.0f}, mMovement {0.0f, 0.0f}, 
-                   mVelocity {0.0f, 0.0f}, mAcceleration {0.0f, 0.0f},
-                   mScale {DEFAULT_SIZE, DEFAULT_SIZE},
-                   mColliderDimensions {DEFAULT_SIZE, DEFAULT_SIZE}, 
-                   mTextures {{}}, mTextureType {SINGLE}, mAngle {0.0f},
-                   mSpriteSheetDimensions {}, mDirection {RIGHT}, 
-                   mAnimationAtlas {{}}, mAnimationIndices {}, mFrameSpeed {0} { }
+// Entity::Entity() : mPosition {0.0f, 0.0f}, mMovement {0.0f, 0.0f}, 
+//                    mVelocity {0.0f, 0.0f}, mAcceleration {0.0f, 0.0f},
+//                    mScale {DEFAULT_SIZE, DEFAULT_SIZE},
+//                    mColliderDimensions {DEFAULT_SIZE, DEFAULT_SIZE}, 
+//                    mTextures {{}}, mTextureType {SINGLE}, mAngle {0.0f},
+//                    mSpriteSheetDimensions {}, mDirection {RIGHT}, 
+//                    mAnimationAtlas {{}}, mAnimationIndices {}, mFrameSpeed {0} { }
 
 
 Entity::Entity(Vector2 position, Vector2 scale, 
@@ -15,7 +15,7 @@ Entity::Entity(Vector2 position, Vector2 scale,
     mMovement { 0.0f, 0.0f }, mScale {scale}, mColliderDimensions {scale}, 
     mTextureType {ATLAS}, 
     mSpriteSheetDimensions {spriteSheetDimensions}, 
-    mAnimationAtlas {animationAtlas}, mDirection {DOWN}, 
+    mAnimationAtlas {animationAtlas},
     mAnimationIndices {animationAtlas.at(IDLE)}, 
     mFrameSpeed {DEFAULT_FRAME_SPEED}, mAngle { 0.0f }, 
     mSpeed { DEFAULT_SPEED }, mRocketStatus { IDLE } 

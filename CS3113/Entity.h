@@ -3,7 +3,7 @@
 
 #include "cs3113.h"
 
-enum Direction    { LEFT, UP, RIGHT, DOWN }; // For walking
+// enum Direction    { LEFT, UP, RIGHT, DOWN }; // For walking
 enum EntityStatus { ACTIVE, INACTIVE      };
 enum RocketState  { IDLE, THRUSTING     };
 enum GameOverReason { OUT_OF_BOUNDS, OUT_OF_FUEL, LANDED_SUCCESSFULLY };
@@ -32,7 +32,7 @@ private:
     // std::map<Direction, std::vector<int>> mAnimationAtlas;
     std::map<RocketState, std::vector<int>> mAnimationAtlas;
     std::vector<int> mAnimationIndices;
-    Direction mDirection;
+    // Direction mDirection;
     RocketState mRocketStatus;
     int mFrameSpeed;
 
@@ -84,9 +84,9 @@ public:
 
     Entity();
     Entity(Vector2 position, Vector2 scale, const char *textureFilepath);
-    Entity(Vector2 position, Vector2 scale, const char *textureFilepath, 
-        TextureType textureType, Vector2 spriteSheetDimensions, 
-        std::map<Direction, std::vector<int>> animationAtlas);
+    // Entity(Vector2 position, Vector2 scale, const char *textureFilepath, 
+    //     TextureType textureType, Vector2 spriteSheetDimensions, 
+    //     std::map<Direction, std::vector<int>> animationAtlas);
 
     Entity(Vector2 position, Vector2 scale, std::vector<const char*> textureFilepaths, 
         TextureType textureType, Vector2 spriteSheetDimensions, 
@@ -108,10 +108,10 @@ public:
 
     bool isActive() { return mEntityStatus == ACTIVE ? true : false; }
 
-    void moveUp()    { mMovement.y = -1; mDirection = UP;    }
-    void moveDown()  { mMovement.y =  1; mDirection = DOWN;  }
-    void moveLeft()  { mMovement.x = -1; mDirection = LEFT;  }
-    void moveRight() { mMovement.x =  1; mDirection = RIGHT; }
+    // void moveUp()    { mMovement.y = -1; mDirection = UP;    }
+    // void moveDown()  { mMovement.y =  1; mDirection = DOWN;  }
+    // void moveLeft()  { mMovement.x = -1; mDirection = LEFT;  }
+    // void moveRight() { mMovement.x =  1; mDirection = RIGHT; }
 
     void accelerateUp()    {
         
@@ -166,7 +166,7 @@ public:
     Vector2     getSpriteSheetDimensions() const { return mSpriteSheetDimensions; }
     std::map<RocketState, Texture2D> getTextures()        const { return mTextures;         }
     TextureType getTextureType()           const { return mTextureType;           }
-    Direction   getDirection()             const { return mDirection;             }
+    // Direction   getDirection()             const { return mDirection;             }
     int         getFrameSpeed()            const { return mFrameSpeed;            }
     float       getJumpingPower()          const { return mJumpingPower;          }
     bool        isJumping()                const { return mIsJumping;             }
