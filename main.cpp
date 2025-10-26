@@ -13,8 +13,8 @@
 // Global Constants
 constexpr int SCREEN_WIDTH  = 1500,
               SCREEN_HEIGHT = 800,
-              FPS           = 120;
-              // NUMBER_OF_LANDING_PADS = 9;
+              FPS           = 120,
+              NUMBER_OF_LANDING_PADS = 5;
 
 constexpr char BG_COLOUR[]    = "#000000ff";
 constexpr Vector2 ORIGIN      = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
@@ -24,21 +24,18 @@ constexpr float FIXED_TIMESTEP = 1.0f / 60.0f;
 constexpr char ROCKET_IDLE[]  = "assets/idling_rocket.png";
 constexpr char ROCKET_THRUSTING[]  = "assets/thrusting_rocket.png";
 constexpr char LANDING_PAD[] = "assets/white_landing_platform.png";
-constexpr char LANDING_PAD_RECTANGLE[] = "assets/white_rectangle.png";
 
 Vector2 gRocketPosition = ORIGIN,
         gRocketScale    = { (float) 100 , (float) 100 },
 
-        gLandingPadPosition = { ORIGIN.x - 500, ORIGIN.y + 300},
-        gLandingPadScale    = { (float) 500  , (float) 30/5 },
+        gLandingPadPosition = { ORIGIN.x - 500, ORIGIN.y + 200},
+        gLandingPadScale    = { (float) 500  , (float) 30 },
 
         gRectanglePadPosition = { ORIGIN.x, ORIGIN.y + 300},
         gRectanglePadScale    = { (float) 500 , (float) 304  };
 
-
-
 Entity *gRocket = nullptr;
-Entity *gLandingPad = nullptr;
+Entity *gLandingPad[NUMBER_OF_LANDING_PADS];
 Entity *gRectanglePad = nullptr;
 
 // Global Variables
@@ -72,31 +69,51 @@ void initialise()
         { ROCKET_IDLE, ROCKET_THRUSTING },
         ATLAS, 
         { 1, 6 },
-        animationAtlas
+        animationAtlas,
+        ROCKET
     );
 
-    gLandingPad = new Entity(
+    gLandingPad[0] = new Entity(
         gLandingPadPosition,
         gLandingPadScale,
-        LANDING_PAD
+        LANDING_PAD,
+        FIXED_LANDING_PAD
     );
 
-    gRectanglePad = new Entity(
-        gRectanglePadPosition,
-        gRectanglePadScale,
-        LANDING_PAD_RECTANGLE
+    gLandingPad[1] = new Entity(
+        {gLandingPadPosition.x + 500, gLandingPadPosition.y},
+        gLandingPadScale,
+        LANDING_PAD,
+        MOVING_LANDING_PAD
     );
 
+    gLandingPad[2] = new Entity(
+        {gLandingPadPosition.x + 1000, gLandingPadPosition.y},
+        gLandingPadScale,
+        LANDING_PAD,
+        FIXED_LANDING_PAD
+    );
 
+    gLandingPad[3] = new Entity(
+        {gLandingPadPosition.x, gLandingPadPosition.y - 400},
+        gLandingPadScale,
+        LANDING_PAD,
+        FIXED_LANDING_PAD
+    );
+
+    gLandingPad[4] = new Entity(
+        {gLandingPadPosition.x + 1000, gLandingPadPosition.y - 300},
+        gLandingPadScale,
+        LANDING_PAD,
+        FIXED_LANDING_PAD
+    );
 
     gRocket->setColliderDimensions({ gRocketScale.x/2, gRocketScale.y/2});
     gRocket->setAcceleration({ 0.0f, GRAVITATIONAL_ACCELERATION });
-    gLandingPad->setColliderDimensions({ gLandingPadScale.x, gLandingPadScale.y});
-    gRectanglePad->setColliderDimensions({ gRectanglePadScale.x, gRectanglePadScale.y});
+    for (int i = 0; i < NUMBER_OF_LANDING_PADS; i++) gLandingPad[i]->setColliderDimensions({ gLandingPadScale.x, gLandingPadScale.y});
 
     SetTargetFPS(FPS);
 }
-
 
 void processInput() 
 {
@@ -132,18 +149,24 @@ void update()
         deltaTime -= FIXED_TIMESTEP;
     }
 
+    for (int i = 0; i < NUMBER_OF_LANDING_PADS; i++) {
+        gLandingPad[i]->update(FIXED_TIMESTEP);
+    }   
+
     if (gRocket != nullptr) {
-        gRocket->update(FIXED_TIMESTEP, gLandingPad, 1);
-}
+        gRocket->update(FIXED_TIMESTEP, gLandingPad, NUMBER_OF_LANDING_PADS);
+    }
+    
+
 }
 
 void render()
 {
     BeginDrawing();
     ClearBackground(ColorFromHex(BG_COLOUR));
-    gLandingPad->render();
-    gRectanglePad->render();
 
+    for (int i = 0; i < NUMBER_OF_LANDING_PADS; i++) gLandingPad[i]->render();
+   
     gRocket->render();
     EndDrawing();
 }

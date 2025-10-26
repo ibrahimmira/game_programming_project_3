@@ -3,14 +3,14 @@
 
 #include "cs3113.h"
 
-// enum Direction    { LEFT, UP, RIGHT, DOWN }; // For walking
-enum EntityStatus { ACTIVE, INACTIVE      };
-enum RocketState  { IDLE, THRUSTING     };
-enum GameOverReason { OUT_OF_BOUNDS, OUT_OF_FUEL, LANDED_SUCCESSFULLY };
-constexpr float GRAVITATIONAL_ACCELERATION = 10.0f,
-                THRUSTING_ACCELERATION   = 18.0f,
-                HORIZONTAL_ACCELERATION = 12.0f,
-                DRAG_CONSTANT = 0.5f;
+enum EntityStatus       { ACTIVE, INACTIVE        };
+enum RocketState        { IDLE, THRUSTING         };
+enum EntityType         { ROCKET, FIXED_LANDING_PAD, MOVING_LANDING_PAD };
+enum GameOverReason     { OUT_OF_BOUNDS, OUT_OF_FUEL, LANDED_SUCCESSFULLY, CRASHED };
+constexpr float         GRAVITATIONAL_ACCELERATION = 10.0f,
+                        THRUSTING_ACCELERATION   = 18.0f,
+                        HORIZONTAL_ACCELERATION = 12.0f,
+                        DRAG_CONSTANT = 0.5f;
 
 
 class Entity
@@ -21,6 +21,8 @@ private:
     Vector2 mVelocity;
     Vector2 mAcceleration;
 
+    float mStartingXPosition;
+
     Vector2 mScale;
     Vector2 mColliderDimensions;
     
@@ -29,11 +31,11 @@ private:
     TextureType mTextureType;
     Vector2 mSpriteSheetDimensions;
     
-    // std::map<Direction, std::vector<int>> mAnimationAtlas;
     std::map<RocketState, std::vector<int>> mAnimationAtlas;
     std::vector<int> mAnimationIndices;
-    // Direction mDirection;
+
     RocketState mRocketStatus;
+    EntityType mEntityType;
     int mFrameSpeed;
 
     int mCurrentFrameIndex = 0;
@@ -45,8 +47,7 @@ private:
     int mSpeed;
     float mAngle;
 
-    // float mFuelTank = 100.0f;
-    float mFuelTank = 2.0f;
+    float mFuelTank = 100.0f;
 
     bool mIsCollidingTop    = false;
     bool mIsCollidingBottom = false;
@@ -83,18 +84,17 @@ public:
     static constexpr float Y_COLLISION_THRESHOLD = 0.5f;
 
     Entity();
-    Entity(Vector2 position, Vector2 scale, const char *textureFilepath);
-    // Entity(Vector2 position, Vector2 scale, const char *textureFilepath, 
-    //     TextureType textureType, Vector2 spriteSheetDimensions, 
-    //     std::map<Direction, std::vector<int>> animationAtlas);
+
+    Entity(Vector2 position, Vector2 scale, const char *textureFilepath, EntityType entityType);
 
     Entity(Vector2 position, Vector2 scale, std::vector<const char*> textureFilepaths, 
         TextureType textureType, Vector2 spriteSheetDimensions, 
-        std::map<RocketState, std::vector<int>> animationAtlas);
+        std::map<RocketState, std::vector<int>> animationAtlas, EntityType entityType);
 
     ~Entity();
 
-    void update(float deltaTime, Entity *collidableEntities, int collisionCheckCount);
+    void update(float deltaTime, Entity *collidableEntities[], int collisionCheckCount);
+    void update(float deltaTime);
     void render();
     void normaliseMovement() { Normalise(&mMovement); }
 
@@ -103,44 +103,32 @@ public:
     void deactivate() { mEntityStatus  = INACTIVE; }
     void displayCollider();
 
-    // check later
     void displayStats();
 
     bool isActive() { return mEntityStatus == ACTIVE ? true : false; }
 
-    // void moveUp()    { mMovement.y = -1; mDirection = UP;    }
-    // void moveDown()  { mMovement.y =  1; mDirection = DOWN;  }
-    // void moveLeft()  { mMovement.x = -1; mDirection = LEFT;  }
-    // void moveRight() { mMovement.x =  1; mDirection = RIGHT; }
-
     void accelerateUp()    {
         
-        // mFuelTank -= 0.001f;
         if (mFuelTank > 0.0f && !mIsGameOver) {
             mFuelTank -= 0.001f;
             mAcceleratingUp = true;
         } 
-        // else mFuelTank = 0.0f;
+       
      }
     void accelerateLeft()  {
         
-        // mFuelTank -= 0.001f;
         if (mFuelTank > 0.0f && !mIsGameOver) {
             mFuelTank -= 0.001f;
             mAcceleratingLeft = true;
         } 
-        // else mFuelTank = 0.0f;
 
     }
     void accelerateRight() {
 
-
-        // mFuelTank -= 0.001f;
         if (mFuelTank > 0.0f && !mIsGameOver) {
             mFuelTank -= 0.001f;
             mAcceleratingRight = true;
         } 
-        // else mFuelTank = 0.0f;
 
     }
 
@@ -166,17 +154,18 @@ public:
     Vector2     getSpriteSheetDimensions() const { return mSpriteSheetDimensions; }
     std::map<RocketState, Texture2D> getTextures()        const { return mTextures;         }
     TextureType getTextureType()           const { return mTextureType;           }
-    // Direction   getDirection()             const { return mDirection;             }
+
     int         getFrameSpeed()            const { return mFrameSpeed;            }
     float       getJumpingPower()          const { return mJumpingPower;          }
     bool        isJumping()                const { return mIsJumping;             }
     int         getSpeed()                 const { return mSpeed;                 }
     float       getAngle()                 const { return mAngle;                 }
+
+    EntityType  getEntityType()           const { return mEntityType;            }
     
     bool isCollidingTop()    const { return mIsCollidingTop;    }
     bool isCollidingBottom() const { return mIsCollidingBottom; }
 
-    // std::map<Direction, std::vector<int>> getAnimationAtlas() const { return mAnimationAtlas; }
     std::map<RocketState, std::vector<int>> getAnimationAtlas() const { return mAnimationAtlas; }
 
     void setPosition(Vector2 newPosition)
@@ -187,8 +176,6 @@ public:
         { mAcceleration = newAcceleration;         }
     void setScale(Vector2 newScale)
         { mScale = newScale;                       }
-    // void setTexture(const char *textureFilepath)
-    //     { mTexture = LoadTexture(textureFilepath); }
     void setColliderDimensions(Vector2 newDimensions) 
         { mColliderDimensions = newDimensions;     }
     void setSpriteSheetDimensions(Vector2 newDimensions) 
@@ -202,8 +189,8 @@ public:
     void setAngle(float newAngle) 
         { mAngle = newAngle;                       }
     void setRocketState(RocketState newState);
+    void setGameOver() { mIsGameOver = true; };
     
-    // check later
     void gameOver();
 
 };
